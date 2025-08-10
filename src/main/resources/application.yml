@@ -1,0 +1,89 @@
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+  data:
+    #    mongodb integration properties
+    mongodb:
+      uri: ${MONGO_DB_URI}
+      database: ${MONGO_DB_DATABASE}
+      auto-index-creation: true
+
+
+    #redis integration properties
+    redis:
+      host: ${REDIS_HOST}
+      port: 11165
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+      ssl:
+        enabled: false
+  main:
+    allow-circular-references: true # UserDetailsServiceImpl -> SpringSecurity and vice versa
+
+  #SMTP integration required properties
+  mail:
+    host: smtp.gmail.com #provided by
+    port: 587
+    username: ${SMTP_USERNAME} #normally "default"
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# confluent kafka integration properties
+  kafka:
+    bootstrap-servers: ${CONFLUENT_KAFKA_BOOTSTRAP_SERVER}
+    producer:
+      # Key serializer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+      # Value serializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+    consumer:
+#      missing groupId of consumer
+      groupId: weekly-consumer-group
+      # Key deserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+      # Value deserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: ${ALLOWED_PACKAGE}
+
+#     kafka security properties
+    properties:
+      sasl:
+        mechanism: PLAIN
+        jaas:
+          config: ${}
+      security:
+        protocol: SASL_SSL
+
+      session:
+        timeout:
+          ms: 45000
+
+client:
+  id: ${CONFLUENT_KAFKA_CLIENT_ID}
+
+
+
+#weacther api integrating properties
+weatherstack:
+  api:
+    key: ${WEATHERSTACK_API_KEY}
+
+
+jwt:
+  secret:
+    key: ${JWT_SECRET}
+
+
