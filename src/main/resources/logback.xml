@@ -1,4 +1,7 @@
 <configuration debug="true">
+
+    <!-- Default log directory, can be overridden with -DLOG_DIR -->
+    <property name="LOG_DIR" value="${LOG_DIR:-${user.dir}/journalApp/journalAppFileLogs}"/>
     <appender name="myConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%highlight(%d{yy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n)</pattern>
@@ -6,14 +9,14 @@
     </appender>
 
     <appender name="myFileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>./journalApp/journalAppFileLogs/journalApp_current.log</file>
+        <file>${LOG_DIR}/journalApp_current.log</file>
         <encoder>
             <pattern>%d{yy-MM-dd_HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>./journalApp/journalAppFileLogs/journalApp.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${LOG_DIR}/journalApp.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>10MB</maxFileSize>
-            <maxHistory>10</maxHistory> <!-- Keep 10 days -->
+            <maxHistory>10</maxHistory>
         </rollingPolicy>
     </appender>
 

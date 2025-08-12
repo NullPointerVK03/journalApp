@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 @SpringBootApplication
 @EnableTransactionManagement
@@ -20,10 +21,16 @@ import java.io.File;
 public class JournalApplication {
     public static void main(String[] args) {
 //        my custom logic to create a separate folder for logs of current application
-        File logDir = new File("./journalApp/journalAppFileLogs");
+        // Resolve log directory path: either from -DLOG_DIR or default to <project-root>/journalAppFileLogs
+        String logDirPath = System.getProperty("LOG_DIR",
+                Paths.get(System.getProperty("user.dir"), "journalApp/journalAppFileLogs").toString());
+
+
+        // Create log directory if it doesn't exist
+        File logDir = new File(logDirPath);
         if (!logDir.exists()) {
             logDir.mkdirs();
-            System.out.println("Created log directory: " + logDir.getAbsolutePath());
+            log.info("Created log directory: {}", logDir.getAbsolutePath());
         }
         SpringApplication.run(JournalApplication.class, args);
         log.info("JOURNAL APP STARTED");

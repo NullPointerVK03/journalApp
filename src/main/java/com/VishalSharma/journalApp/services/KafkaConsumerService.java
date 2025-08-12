@@ -21,8 +21,11 @@ public class KafkaConsumerService {
     public void consumer(SentimentData data) {
         try {
             mySendMail(data);
-
+            String email = data.getEmail();
+            String msg = "Sending weekly analyzed sentiment mail";
+            log.info("{} {} {}", msg, " to ", email);
         } catch (Exception e) {
+            log.info("Couldn't able to sent weekly analyzed sentiment to {} Exception: ", data.getEmail(), e);
             throw new RuntimeException(e);
         }
     }
