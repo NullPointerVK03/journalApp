@@ -87,6 +87,6 @@ jwt:
     key: ${JWT_SECRET}
 
 dummy:
-  email: ${DUMMY_MAIL}
+  email: ${DUMMY_EMAIL}
 
 
