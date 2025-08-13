@@ -36,6 +36,7 @@ public class PublicController {
     @GetMapping("/dashboard")
     public ResponseEntity<String> dashboard() {
         try {
+            log.info("Health of public dashboard is ok :) ");
             String msg = "Welcome! public dashboard is working fine.";
             return new ResponseEntity<>(msg, HttpStatus.OK);
         } catch (Exception e) {
