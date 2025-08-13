@@ -17,17 +17,21 @@ public class EmailServiceTest {
     @Value("${spring.mail.username}")
     private String senderMail;
 
+    //    include this property in your own .properties or .yml file
+    @Value("${dummy.email}")
+    private String dummyReceiversEmail;
+
     @Disabled
     @Test
     void sentMailTest() {
 //
         Assertions.assertTrue(
                 emailService.sendMail(
-                "vksharma32123@gmail.com",
-                "Testing JavaMailSender",
-                "java mail service ko test kar raha hun. \n" +
-                        "sending mail from: " + senderMail
-        ));
+                        dummyReceiversEmail,
+                        "Testing JavaMailSender",
+                        "java mail service ko test kar raha hun. \n" +
+                                "sending mail from: " + senderMail
+                ));
     }
 
 }
