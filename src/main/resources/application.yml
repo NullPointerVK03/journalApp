@@ -63,7 +63,7 @@ spring:
       sasl:
         mechanism: PLAIN
         jaas:
-          config: ${}
+          config: ${KAFKA_CONFIG}
       security:
         protocol: SASL_SSL
 
