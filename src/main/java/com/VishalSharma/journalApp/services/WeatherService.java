@@ -7,12 +7,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
-@Component
+@Service
 public class WeatherService {
 
     @Autowired
@@ -29,19 +29,24 @@ public class WeatherService {
 
     public WeatherResponse getWeatherForCity(String query) {
         try {
+            log.info("Fetching weather for city: {}", query);
             WeatherResponse response = redisService.get("Weather_Of_" + query, WeatherResponse.class);
             if (response != null) {
+                log.info("Weather data for {} found in Redis cache", query);
                 return response;
             } else {
+                log.info("Weather data for {} not found in Redis, fetching from API", query);
                 String finalApi = appCache.appCache.get(AppCache.keys.WEATHER_API.toString())
                         .replace(Placeholder.API_KEY, myApi)
                         .replace(Placeholder.CITY, query);
                 WeatherResponse exchanged = restTemplate.exchange(finalApi, HttpMethod.GET, null, WeatherResponse.class).getBody();
                 redisService.set("Weather_Of_" + query, exchanged, 300L);
+                log.info("Weather data for {} fetched from API and cached in Redis", query);
                 return exchanged;
             }
         } catch (RestClientException e) {
             log.info("No matching location {} found.", query);
+            log.error("Error occurred while fetching weather for city: {}", query, e);
             throw new RuntimeException(e);
         }
     }
@@ -70,5 +75,4 @@ public class WeatherService {
     //            throw new RuntimeException(e);
     //        }
     //    }
-
 }

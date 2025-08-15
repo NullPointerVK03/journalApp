@@ -1,8 +1,6 @@
 package com.VishalSharma.journalApp.entity;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.NonNull;
+import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -14,12 +12,14 @@ import java.util.List;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Document(collection = "users")
 public class User {
 
     /*
      * since we are creating a user using @Builder
-     * it is setting all the fields as null which results in null pointer exception*/
+     * it is setting all the fields as null which results in null pointer exception when try to create new user*/
 
     @Id
     private ObjectId id;
@@ -38,9 +38,9 @@ public class User {
     private boolean sentimentAnalysis;
 
     @DBRef
+    @Builder.Default
     private List<JournalEntry> journalEntries = new ArrayList<>();
 
+    @Builder.Default
     private List<String> roles = new ArrayList<>();
-
-
 }

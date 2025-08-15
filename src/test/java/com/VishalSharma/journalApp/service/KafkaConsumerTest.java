@@ -1,7 +1,6 @@
 package com.VishalSharma.journalApp.service;
 
 import com.VishalSharma.journalApp.schedular.UserSchedular;
-import com.VishalSharma.journalApp.services.UserService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

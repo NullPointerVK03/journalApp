@@ -5,15 +5,12 @@ import com.VishalSharma.journalApp.services.UserDetailsServiceImpl;
 import com.VishalSharma.journalApp.services.UserService;
 import com.VishalSharma.journalApp.utils.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.protocol.types.Field;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -40,44 +37,42 @@ public class PublicController {
             String msg = "Welcome! public dashboard is working fine.";
             return new ResponseEntity<>(msg, HttpStatus.OK);
         } catch (Exception e) {
-            throw new UsernameNotFoundException(e.toString());
-        }
-    }
-
-    @GetMapping("/get-logs")
-    public void getLogs() {
-        try {
-            throw new RuntimeException();
-        } catch (Exception e) {
-            log.info("Logging successful");
+            throw new RuntimeException(e);
         }
     }
 
     //    CRUD operations
-//    creating new user
+    //    creating new user
     @PostMapping("/signup")
     public ResponseEntity<Void> signup(@RequestBody User user) {
         try {
+            log.info("Incoming POST request to create a new user");
             userService.createNewUser(user);
+            log.info("User with userName: {} created", user.getUserName());
             return new ResponseEntity<>(HttpStatus.CREATED);
         } catch (Exception e) {
+            log.warn("Something went wrong while creating a user with userName: {}", user.getUserName());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody User user) {
-        try{
+        try {
+            log.info("Incoming POST request to login with userName: {}", user.getUserName());
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(user.getUserName(), user.getPassword()));
+            log.info("Getting UserDetails for userName: {}", user.getUserName());
             UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUserName());
+            log.info("Generating JWT token for userName: {}", user.getUserName());
             String jwt = jwtUtil.generateToken(userDetails.getUsername());
+            log.info("JWT token generated for userName: {}", user.getUserName());
             return new ResponseEntity<>(jwt, HttpStatus.OK);
-        }catch (Exception e){
-            log.error("Exception occurred while createAuthenticationToken ", e);
+        } catch (Exception e) {
+            log.error("Exception occurred while creating JWT token. Exception: ", e);
             return new ResponseEntity<>("Incorrect username or password", HttpStatus.BAD_REQUEST);
         }
     }
-    }
+}
 
 

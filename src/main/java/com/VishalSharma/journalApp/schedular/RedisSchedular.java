@@ -4,7 +4,6 @@ import com.VishalSharma.journalApp.api.response.WeatherResponse;
 import com.VishalSharma.journalApp.services.WeatherService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -17,8 +16,8 @@ public class RedisSchedular {
     private WeatherService weatherService;
 
     //    redis free tier needs to be refresh once in 15 days so that database i n redis not gets deleted
-    // runs every 14 day
-//    @Scheduled(fixedRate = 14L * 24 * 60 * 60 * 1000)
+    //    runs every 14 day
+    //    @Scheduled(fixedRate = 14L * 24 * 60 * 60 * 1000)
     public void refreshRedis() {
         try {
             for (int i = 0; i < 2; i++) {

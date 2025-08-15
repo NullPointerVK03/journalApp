@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -34,15 +33,23 @@ public class UserSchedular {
     @Autowired
     private KafkaTemplate<String, SentimentData> kafkaTemplate;
 
-
     @Scheduled(cron = "0 0 9 * * SUN")
     public void fetchUserAndSendSAMail() {
+        log.info("Starting scheduled task: fetchUserAndSendSAMail at {}", LocalDateTime.now());
         List<User> userWithSA = userRepository.findUserWithSA();
-        for (User user : userWithSA) {
-//                extracting journalEntries of user
-            List<Sentiment> list = user.getJournalEntries().stream().filter(j -> j.getDate().isAfter(LocalDateTime.now().minusWeeks(1))).map(JournalEntry::getSentiment).toList();
+        log.info("Found {} users opted in for Sentiment Analysis", userWithSA.size());
 
-//               a map to store sentiment and it's occurrence count
+        for (User user : userWithSA) {
+            log.info("Processing user with username: {} and email: {}", user.getUserName(), user.getEmail());
+
+            // extracting journalEntries of user
+            List<Sentiment> list = user.getJournalEntries().stream()
+                    .filter(j -> j.getDate().isAfter(LocalDateTime.now().minusWeeks(1)))
+                    .map(JournalEntry::getSentiment)
+                    .toList();
+            log.info("Found {} journal entries from last week for user: {}", list.size(), user.getUserName());
+
+            // a map to store sentiment and its occurrence count
             Map<Sentiment, Integer> sentimentIntegerMap = new HashMap<>();
 
             Sentiment mostFrequentSentiment = null;
@@ -59,25 +66,29 @@ public class UserSchedular {
                     }
                 }
             }
-//          integrating kafka for automation
+            log.info("Most frequent sentiment for user {} is: {}", user.getUserName(), mostFrequentSentiment);
+
+            // integrating kafka for automation
             if (mostFrequentSentiment != null) {
-                SentimentData data = SentimentData.builder().email(user.getEmail()).sentiment(mostFrequentSentiment).build();
+                SentimentData data = SentimentData.builder()
+                        .email(user.getEmail())
+                        .sentiment(mostFrequentSentiment)
+                        .build();
+
                 try {
+                    log.info("Sending sentiment data to Kafka topic 'weekly-sentiment' for user: {}", user.getUserName());
                     kafkaTemplate.send("weekly-sentiment", user.getEmail(), data);
+                    log.info("Sentiment data successfully sent to Kafka for user: {}", user.getUserName());
                 } catch (Exception e) {
-//                  kafka fallback
-                    log.warn("For some reason KafkaTemplate failed, sending mail to users manually.", e);
+                    // kafka fallback
+                    log.warn("KafkaTemplate failed for user: {}, falling back to sending email manually", user.getUserName(), e);
                     emailService.sendMail(data.getEmail(), "Your Weekly analyzed sentiment", data.getSentiment().toString());
+                    log.info("Sentiment email manually sent to {}", data.getEmail());
                 }
+            } else {
+                log.info("No valid sentiment found for user: {} in last week's journal entries", user.getUserName());
             }
         }
+        log.info("Scheduled task: fetchUserAndSendSAMail completed at {}", LocalDateTime.now());
     }
-
-
-    @Scheduled(cron = "0 0/10 * * * *")
-    public void refreshAppCache() {
-        appCache.init();
-    }
-
-
 }
