@@ -1,5 +1,6 @@
 package com.VishalSharma.journalApp.services;
 
+import com.VishalSharma.journalApp.dto.UserDTO;
 import com.VishalSharma.journalApp.entity.User;
 import com.VishalSharma.journalApp.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.Optional;
+
 @Service
 @Slf4j
 public class UserService {
@@ -27,12 +29,16 @@ public class UserService {
 
     //    CRUD operations
 
-    public void createNewUser(User user) {
+    public void createNewUser(UserDTO user) {
         try {
             log.info("Creating new user with username: {}", user.getUserName());
-            user.getRoles().add("USER");
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            userRepository.save(user);
+            User newUser = new User();
+            newUser.setUserName(user.getUserName());
+            newUser.setPassword(passwordEncoder.encode(user.getPassword()));
+            newUser.setEmail(user.getEmail());
+            newUser.setSentimentAnalysis(user.isSentimentAnalysis());
+            newUser.getRoles().add("USER");
+            userRepository.save(newUser);
             log.info("User with username: {} created successfully", user.getUserName());
         } catch (Exception e) {
             log.error("Error occurred while creating new user with username: {}", user.getUserName(), e);
@@ -40,7 +46,7 @@ public class UserService {
         }
     }
 
-    public void updateCredentials(User user, String userName) {
+    public void updateCredentials(UserDTO user, String userName) {
         try {
             log.info("Updating credentials for username: {}", userName);
             User userInDb = userRepository.findByUserName(userName);
@@ -68,15 +74,16 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    public void createNewAdmin(User admin) {
+    public void createNewAdmin(UserDTO user) {
         try {
-            log.info("Creating new admin with username: {}", admin.getUserName());
-            admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+            log.info("Creating new admin with username: {}", user.getUserName());
+            User admin = new User();
+            admin.setPassword(passwordEncoder.encode(user.getPassword()));
             admin.getRoles().addAll(Arrays.asList("USER", "ADMIN"));
             userRepository.save(admin);
             log.info("Admin with username: {} created successfully", admin.getUserName());
         } catch (Exception e) {
-            log.error("Error occurred while creating new admin with username: {}", admin.getUserName(), e);
+            log.error("Error occurred while creating new admin with username: {}", user.getUserName(), e);
             throw new RuntimeException(e);
         }
     }

@@ -3,6 +3,8 @@ package com.VishalSharma.journalApp.controller;
 
 import com.VishalSharma.journalApp.api.response.WeatherResponse;
 import com.VishalSharma.journalApp.services.WeatherService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,18 +19,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/user/api/weather-api")
 @Slf4j
+@Tag(name = "Weather APIs", description = "Dashboard, Get Weather info")
 public class WeatherController {
 
     @Autowired
     private WeatherService weatherService;
 
     @GetMapping("/dashboard")
+    @Operation(description = "WeatherController Dashboard")
     public ResponseEntity<String> dashboard() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
-            log.info("Health of WeatherController dashboard is ok for user: {}", userName);
+
+            log.info("Incoming GET request to access dashboard of WeatherController by userName: {}", userName);
             String msg = "Welcome " + userName + "! weatherController dashboard is working fine.";
+
             return new ResponseEntity<>(msg, HttpStatus.OK);
         } catch (Exception e) {
             log.error("Error accessing WeatherController dashboard", e);
@@ -37,6 +43,7 @@ public class WeatherController {
     }
 
     @GetMapping("{query}")
+    @Operation(description = "Get Weather of a city")
     public ResponseEntity<String> getWeatherInfo(@PathVariable String query) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
