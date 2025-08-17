@@ -34,7 +34,14 @@ public class SpringSecurity {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         return http.authorizeHttpRequests(request -> request
-                        .requestMatchers("/public/**", "/swagger-ui/**", "/v3/**", "/auth/**").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/webjars/**"
+                        ).permitAll()
+                        .requestMatchers("/public/**","/auth/**").permitAll()
                         .requestMatchers("/journal/**", "/user/**").authenticated()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
