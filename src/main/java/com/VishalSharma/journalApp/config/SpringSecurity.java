@@ -38,10 +38,10 @@ public class SpringSecurity {
                                 "/",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/swagger-resources/**",
-                                "/webjars/**"
+                                "/webjars/**",
+                                "/swagger-resources/**"
                         ).permitAll()
-                        .requestMatchers("/public/**","/auth/**").permitAll()
+                        .requestMatchers("/public/**", "/auth/**").permitAll()
                         .requestMatchers("/journal/**", "/user/**").authenticated()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
