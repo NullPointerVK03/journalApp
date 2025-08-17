@@ -31,6 +31,9 @@ public class GoogleOAuthService {
     @Value("${spring.security.oauth2.registration.google.client-secret}")
     private String clientSecret;
 
+    @Value("${google.redirect.uri}")
+    private String redirectURI;
+
     public GoogleOAuthService(RestTemplate restTemplate,
                               PasswordEncoder passwordEncoder,
                               UserRepository userRepository,
@@ -47,11 +50,12 @@ public class GoogleOAuthService {
         try {
             String googleOAuthURL = "https://oauth2.googleapis.com/token";
 
+
             MultiValueMap<String, String> detailsPayload = new LinkedMultiValueMap<>();
             detailsPayload.add("code", authCode);
             detailsPayload.add("client_id", clientId);
             detailsPayload.add("client_secret", clientSecret);
-            detailsPayload.add("redirect_uri", "https://developers.google.com/oauthplayground");
+            detailsPayload.add("redirect_uri", redirectURI);
             detailsPayload.add("grant_type", "authorization_code");
 
             HttpHeaders headers = new HttpHeaders();
