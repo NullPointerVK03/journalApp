@@ -27,7 +27,7 @@ class RedisServiceTest {
 //    void testConnection() {
 //        try {
 //            redisTemplate.opsForValue().set("connection_test", "success");
-//            String result = redisTemplate.opsForValue().get("connection_test");
+//            String result = redisTemplate.opsForValue().customOpenAPI("connection_test");
 //            Assertions.assertEquals("success", result);
 //            System.out.println("Connection successful!");
 //        } catch (Exception e) {

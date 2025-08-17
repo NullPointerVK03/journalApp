@@ -5,7 +5,6 @@ import com.VishalSharma.journalApp.entity.User;
 import com.VishalSharma.journalApp.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,13 +18,15 @@ import java.util.Optional;
 @Slf4j
 public class UserService {
 
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final JournalEntryService journalEntryService;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private JournalEntryService journalEntryService;
+    public UserService(UserRepository userRepository, JournalEntryService journalEntryService) {
+        this.userRepository = userRepository;
+        this.journalEntryService = journalEntryService;
+        this.passwordEncoder = new BCryptPasswordEncoder();
+    }
 
     //    CRUD operations
 
@@ -78,7 +79,9 @@ public class UserService {
         try {
             log.info("Creating new admin with username: {}", user.getUserName());
             User admin = new User();
+            admin.setUserName(user.getUserName());
             admin.setPassword(passwordEncoder.encode(user.getPassword()));
+            admin.setEmail(user.getEmail());
             admin.getRoles().addAll(Arrays.asList("USER", "ADMIN"));
             userRepository.save(admin);
             log.info("Admin with username: {} created successfully", admin.getUserName());
@@ -98,7 +101,7 @@ public class UserService {
             log.info("ADMIN authority granted successfully to user ID: {}", userId);
         } else {
             log.warn("User with ID: {} not found while granting ADMIN authority", userId);
-            throw new RuntimeException();
+            throw new RuntimeException("User not found for ID: " + userId);
         }
     }
 }

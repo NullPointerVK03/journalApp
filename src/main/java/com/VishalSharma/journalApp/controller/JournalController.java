@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,25 +20,33 @@ import java.util.List;
 @RequestMapping("/journal")
 @Tag(name = "JournalEntry APIs", description = "Dashboard, Create, Read, Update, Delete JournalEntry")
 public class JournalController {
-    //    Autowire the JournalEntryService
-    @Autowired
-    private JournalEntryService journalEntryService;
 
-    //    health check dashboard
+    private final JournalEntryService journalEntryService;
+
+    public JournalController(JournalEntryService journalEntryService) {
+        this.journalEntryService = journalEntryService;
+    }
+
+    // health check dashboard
     @GetMapping("/dashboard")
     @Operation(description = "JournalController Dashboard")
     public ResponseEntity<String> dashboard() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userName = authentication.getName();
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String userName = authentication.getName();
 
-        log.info("Incoming GET request to access JournalControllerDashboard by user with userName: {}", userName);
+            log.info("GET /journal/dashboard requested by user: {}", userName);
+            String msg = "Welcome " + userName + "! Journal dashboard is working fine.";
 
-        String msg = "Welcome " + userName + "! Journal dashboard is working fine.";
-        return new ResponseEntity<>(msg, HttpStatus.OK);
+            return ResponseEntity.ok(msg);
+        } catch (Exception e) {
+            log.error("Error accessing /journal/dashboard", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Something went wrong");
+        }
     }
 
-    //    CRUD operations
-//    create
+    // create
     @PostMapping("/create-new-journal")
     @Operation(description = "Create JournalEntry of a User")
     public ResponseEntity<String> createJournal(@RequestBody JournalEntryDTO entry) {
@@ -47,99 +54,104 @@ public class JournalController {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
 
-            log.info("Incoming POST request to create new JournalEntry for userName: {}", userName);
+            log.info("POST /journal/create-new-journal for user: {}", userName);
             journalEntryService.saveNewEntry(entry, userName);
 
-            log.info("New JournalEntry created for userName: {}", userName);
-            return new ResponseEntity<>(HttpStatus.CREATED);
+            log.info("JournalEntry created successfully for user: {}", userName);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("Journal entry created successfully.");
         } catch (Exception e) {
-            log.warn("Something went wrong while creating a JournalEntry for a user. Exception: ", e);
-            return new ResponseEntity<>("Some error occurred, during creating a new journalEntry", HttpStatus.BAD_REQUEST);
+            log.error("Error creating journal entry", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Some error occurred while creating a new journal entry");
         }
     }
 
-    //    read journal entries of a user
-    @GetMapping("/get-all-journals")
+    // read
+    @GetMapping("/all-journals")
     @Operation(description = "Get all JournalEntries of a User")
     public ResponseEntity<List<JournalEntry>> getJournalEntriesOfUser() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
-            log.info("Incoming GET request to get all JournalEntries for userName: {}.", userName);
+
+            log.info("GET /journal/all-journals requested by user: {}", userName);
             List<JournalEntry> journalEntriesOfUser = journalEntryService.getAllJournalsOfUser(userName);
 
             if (journalEntriesOfUser != null && !journalEntriesOfUser.isEmpty()) {
-                log.info("Returning JournalEntries for userName: {}", userName);
-                return new ResponseEntity<>(journalEntriesOfUser, HttpStatus.OK);
+                log.info("Returning {} journal entries for user: {}", journalEntriesOfUser.size(), userName);
+                return ResponseEntity.ok(journalEntriesOfUser);
             }
 
-            log.info("No JournalEntries found for userName: {}, returning empty response.", userName);
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            log.info("No journal entries found for user: {}", userName);
+            return ResponseEntity.noContent().build();
         } catch (Exception e) {
-            log.warn("Some error occurred while fetching all JournalEntries of a user.", e);
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            log.error("Error fetching journal entries", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    //    update
+    // update
     @PutMapping("/update-journal/{jId}")
     @Operation(description = "Updates JournalEntry by ID of a User")
-    public ResponseEntity<Void> updateJournalEntryById(@PathVariable String jId, @RequestBody JournalEntryDTO entry) {
+    public ResponseEntity<String> updateJournalEntryById(@PathVariable String jId, @RequestBody JournalEntryDTO entry) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
 
-            log.info("Incoming PUT request to update JournalEntry with jID: {}, for userName: {}", jId, userName);
+            log.info("PUT /journal/update-journal/{} requested by user: {}", jId, userName);
 
-            log.info("Converting data type of jId from String to ObjectId for updating JournalEntry");
             ObjectId id = new ObjectId(jId);
             journalEntryService.updateJournalEntry(id, entry, userName);
 
-            log.info("JournalEntry with jId: {}, updated for userName: {}", jId, userName);
-            return new ResponseEntity<>(HttpStatus.OK);
+            log.info("JournalEntry {} updated for user: {}", jId, userName);
+            return ResponseEntity.ok("Journal entry updated successfully.");
         } catch (Exception e) {
-            log.warn("Some error occurred while updating JournalEntry of a user. Exception", e);
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            log.warn("Error updating journal entry with id: {}", jId, e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Journal entry not found with id: " + jId);
         }
     }
 
-    //    delete entry
+    // delete one
     @DeleteMapping("/delete-journal/{jId}")
     @Operation(description = "Delete JournalEntry By ID of a User")
-    public ResponseEntity<Void> deleteJournalById(@PathVariable String jId) {
+    public ResponseEntity<String> deleteJournalById(@PathVariable String jId) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
 
-            log.info("Incoming DELETE request to delete a JournalEntry with jId: {}, of userName: {}.", jId, userName);
+            log.info("DELETE /journal/delete-journal/{} requested by user: {}", jId, userName);
 
-            log.info("Converting data type of jId from String to ObjectId for deleting JournalEntry");
             ObjectId id = new ObjectId(jId);
             journalEntryService.deleteJournalById(id, userName);
 
-            log.info("JournalEntry with jId: {}, deleted.", jId);
-            return new ResponseEntity<>(HttpStatus.OK);
+            log.info("JournalEntry {} deleted for user: {}", jId, userName);
+            return ResponseEntity.ok("Journal entry deleted successfully.");
         } catch (Exception e) {
-            log.warn("jId: {} not found.", jId, e);
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            log.warn("Error deleting journal entry with id: {}", jId, e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Journal entry not found with id: " + jId);
         }
     }
 
+    // delete all
     @DeleteMapping("/delete-all-journal")
     @Operation(description = "Deletes all JournalEntries of a User")
-    public ResponseEntity<Void> deleteAllJournals() {
+    public ResponseEntity<String> deleteAllJournals() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
 
-            log.info("Incoming DELETE request to delete all JournalEntries of userName: {}", userName);
+            log.info("DELETE /journal/delete-all-journal requested by user: {}", userName);
             journalEntryService.deleteAllJournalsOfUser(userName);
 
-            log.info("All JournalEntries of userName: {}, deleted", userName);
-            return new ResponseEntity<>(HttpStatus.OK);
+            log.info("All journal entries deleted for user: {}", userName);
+            return ResponseEntity.ok("All journal entries deleted successfully.");
         } catch (Exception e) {
-            log.warn("Something went wrong while deleting all JournalEntries of a user.", e);
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            log.error("Error deleting all journal entries for user", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Something went wrong while deleting all journal entries");
         }
     }
 }

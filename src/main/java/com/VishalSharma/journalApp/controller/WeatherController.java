@@ -1,12 +1,10 @@
 package com.VishalSharma.journalApp.controller;
 
-
 import com.VishalSharma.journalApp.api.response.WeatherResponse;
 import com.VishalSharma.journalApp.services.WeatherService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,15 +14,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/user/api/weather-api")
-@Slf4j
 @Tag(name = "Weather APIs", description = "Dashboard, Get Weather info")
 public class WeatherController {
 
-    @Autowired
-    private WeatherService weatherService;
+    private final WeatherService weatherService;
 
+    public WeatherController(WeatherService weatherService) {
+        this.weatherService = weatherService;
+    }
+
+    // Health-check
     @GetMapping("/dashboard")
     @Operation(description = "WeatherController Dashboard")
     public ResponseEntity<String> dashboard() {
@@ -32,37 +34,50 @@ public class WeatherController {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
 
-            log.info("Incoming GET request to access dashboard of WeatherController by userName: {}", userName);
-            String msg = "Welcome " + userName + "! weatherController dashboard is working fine.";
+            log.info("GET /user/api/weather-api/dashboard invoked by user: {}", userName);
 
-            return new ResponseEntity<>(msg, HttpStatus.OK);
+            String msg = "Welcome " + userName + "! WeatherController dashboard is working fine.";
+            return ResponseEntity.ok(msg);
         } catch (Exception e) {
             log.error("Error accessing WeatherController dashboard", e);
-            throw new RuntimeException(e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Something went wrong with WeatherController dashboard");
         }
     }
 
-    @GetMapping("{query}")
+    // Get weather info
+    @GetMapping("/{query}")
     @Operation(description = "Get Weather of a city")
     public ResponseEntity<String> getWeatherInfo(@PathVariable String query) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
-            log.info("Incoming GET request for weather info of city: {} by user: {}", query, userName);
+
+            log.info("GET /user/api/weather-api/{} invoked by user: {}", query, userName);
 
             WeatherResponse weatherForCity = weatherService.getWeatherForCity(query);
-            log.info("Weather data retrieved successfully for city: {}", query);
+
+            if (weatherForCity == null || weatherForCity.getCurrent() == null) {
+                log.warn("No weather data found for city: {}", query);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No matching location found with name: " + query);
+            }
 
             double feelsLikeTempInC = weatherForCity.getCurrent().getFeelsLikeCelsius();
             double tempCelsius = weatherForCity.getCurrent().getTempCelsius();
 
             log.debug("Temperature for {} - Actual: {}, Feels Like: {}", query, tempCelsius, feelsLikeTempInC);
 
-            String msg = "Hi " + userName + "! The temperature in " + query + " is " + tempCelsius + ", but it feels like " + feelsLikeTempInC + ".";
-            return new ResponseEntity<>(msg, HttpStatus.OK);
+            String msg = String.format(
+                    "Hi %s! The temperature in %s is %.1f°C, but it feels like %.1f°C.",
+                    userName, query, tempCelsius, feelsLikeTempInC
+            );
+
+            return ResponseEntity.ok(msg);
         } catch (Exception e) {
-            log.warn("No matching location found for city: {}", query, e);
-            return new ResponseEntity<>("No matching location found with name: " + query, HttpStatus.NOT_FOUND);
+            log.error("Unexpected error while retrieving weather info for city: {}", query, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Something went wrong while fetching weather info");
         }
     }
 }

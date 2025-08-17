@@ -32,7 +32,11 @@ public class JournalApplication {
             logDir.mkdirs();
             log.info("Created log directory: {}", logDir.getAbsolutePath());
         }
+
+
         SpringApplication.run(JournalApplication.class, args);
+
+
         log.info("JOURNAL APP STARTED");
     }
 

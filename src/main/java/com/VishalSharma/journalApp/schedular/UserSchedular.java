@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -35,12 +36,13 @@ public class UserSchedular {
 
     @Scheduled(cron = "0 0 9 * * SUN")
     public void fetchUserAndSendSAMail() {
+
         log.info("Starting scheduled task: fetchUserAndSendSAMail at {}", LocalDateTime.now());
         List<User> userWithSA = userRepository.findUserWithSA();
         log.info("Found {} users opted in for Sentiment Analysis", userWithSA.size());
 
         for (User user : userWithSA) {
-            log.info("Processing user with username: {} and email: {}", user.getUserName(), user.getEmail());
+            log.info("Processing user with userName: {} ", user.getUserName());
 
             // extracting journalEntries of user
             List<Sentiment> list = user.getJournalEntries().stream()

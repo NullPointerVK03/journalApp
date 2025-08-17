@@ -5,7 +5,6 @@ import com.VishalSharma.journalApp.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,53 +17,70 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "User APIs", description = "Update, Delete User")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    //    health-check
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    // Health-check
     @GetMapping("/dashboard")
     @Operation(description = "User dashboard")
     public ResponseEntity<String> dashboard() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userName = authentication.getName();
-        String msg = "Welcome " + userName + "! User dashboard is working fine.";
-        return new ResponseEntity<>(msg
-                , HttpStatus.OK);
-    }
-
-//    update, delete
-//    update
-
-    @PutMapping("/update-user-credentials")
-    @Operation(description = "Updates existing user's credentials after login")
-    public ResponseEntity<Void> updateUserCredentials(@RequestBody UserDTO user) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
-            log.info("Incoming PUT request to update user's credentials for userName: {}", userName);
-            userService.updateCredentials(user, userName);
-            log.info("Credentials updated for userName: {}", userName);
-            return new ResponseEntity<>(HttpStatus.OK);
+
+            log.info("GET /user/dashboard invoked by user: {}", userName);
+
+            String msg = "Welcome " + userName + "! User dashboard is working fine.";
+            return ResponseEntity.ok(msg);
         } catch (Exception e) {
-            log.warn("Something went wrong while updating userCredentials. Exception: ", e);
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            log.error("Error accessing /user/dashboard", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Something went wrong with user dashboard");
         }
     }
 
-    //    delete
-    @DeleteMapping("/delete-user")
-    @Operation(description = "Deletes a existing user after login")
-    public ResponseEntity<Void> deleteUser() {
+    // Update user credentials
+    @PutMapping("/update-user-credentials")
+    @Operation(description = "Updates existing user's credentials after login")
+    public ResponseEntity<String> updateUserCredentials(@RequestBody UserDTO user) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
-            log.info("Incoming DELETE request to delete user with userName: {}", userName);
-            userService.deleteUserByUserName(userName);
-            log.info("User with userName: {} deleted from DB.", userName);
-            return new ResponseEntity<>(HttpStatus.OK);
+
+            log.info("PUT /user/update-user-credentials invoked for user: {}", userName);
+
+            userService.updateCredentials(user, userName);
+
+            log.info("Credentials updated successfully for user: {}", userName);
+            return ResponseEntity.ok("User credentials updated successfully.");
         } catch (Exception e) {
-            log.warn("Something went wrong while deleting user. Exception: ", e);
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            log.error("Error updating credentials for user: {}", user.getUserName(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Something went wrong while updating credentials");
+        }
+    }
+
+    // Delete user
+    @DeleteMapping("/delete-user")
+    @Operation(description = "Deletes an existing user after login")
+    public ResponseEntity<String> deleteUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String userName = authentication.getName();
+
+            log.info("DELETE /user/delete-user invoked for user: {}", userName);
+
+            userService.deleteUserByUserName(userName);
+
+            log.info("User deleted successfully: {}", userName);
+            return ResponseEntity.ok("User deleted successfully.");
+        } catch (Exception e) {
+            log.error("Error deleting user", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Something went wrong while deleting user");
         }
     }
 }

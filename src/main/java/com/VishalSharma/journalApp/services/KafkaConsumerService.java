@@ -2,7 +2,6 @@ package com.VishalSharma.journalApp.services;
 
 import com.VishalSharma.journalApp.model.SentimentData;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -11,31 +10,39 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class KafkaConsumerService {
 
-    @Autowired
-    private KafkaTemplate<String, SentimentData> kafkaTemplate;
+    private final KafkaTemplate<String, SentimentData> kafkaTemplate;
+    private final EmailService emailService;
 
-    @Autowired
-    private EmailService emailService;
+    public KafkaConsumerService(KafkaTemplate<String, SentimentData> kafkaTemplate, EmailService emailService) {
+        this.kafkaTemplate = kafkaTemplate;
+        this.emailService = emailService;
+    }
 
     @KafkaListener(topics = "weekly-sentiment", groupId = "weekly-sentiment-group")
     public void consumer(SentimentData data) {
         try {
+            log.info("Received SentimentData from Kafka topic 'weekly-sentiment' for email: {}", data.getEmail());
             mySendMail(data);
-            String email = data.getEmail();
-            String msg = "Sending weekly analyzed sentiment mail";
-            log.info("{} {} {}", msg, " to ", email);
+            log.info("Successfully processed weekly sentiment email for: {}", data.getEmail());
         } catch (Exception e) {
-            log.info("Couldn't able to sent weekly analyzed sentiment to {} Exception: ", data.getEmail(), e);
-            throw new RuntimeException(e);
+            log.error("Failed to process weekly sentiment email for: {}. Exception: ", data.getEmail(), e);
+            throw new RuntimeException("Error while processing sentiment data for: " + data.getEmail(), e);
         }
     }
 
     private void mySendMail(SentimentData data) {
         try {
-            emailService.sendMail(data.getEmail(), "Your Weekly analyzed sentiment", data.getSentiment().toString());
+            log.info("Sending weekly analyzed sentiment email to {}", data.getEmail());
+            emailService.sendMail(
+                    data.getEmail(),
+                    "Your Weekly Analyzed Sentiment",
+                    data.getSentiment().toString()
+            );
+            log.info("Weekly analyzed sentiment email sent successfully to {}", data.getEmail());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            log.error("Error occurred while sending weekly analyzed sentiment email to {}. Exception: ",
+                    data.getEmail(), e);
+            throw new RuntimeException("Error while sending email to " + data.getEmail(), e);
         }
     }
-
 }
